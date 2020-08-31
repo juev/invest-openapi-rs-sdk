@@ -133,7 +133,7 @@ pub struct MoneyAmount {
     Value: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Instrument {
     FIGI: String,
     Ticker: String,

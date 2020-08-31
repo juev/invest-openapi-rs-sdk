@@ -1,3 +1,3 @@
 #![allow(dead_code)]
 
-mod rest_client;
+pub mod rest_client;
