@@ -1,84 +1,86 @@
 // extern crate chrono;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 
 pub type Currency = String;
 
 lazy_static! {
-    pub static ref  RUB: Currency = String::from("RUB");
-    pub static ref  USD: Currency = String::from("USD");
-    pub static ref  EUR: Currency = String::from("EUR");
-    pub static ref  TRY: Currency = String::from("TRY");
-    pub static ref  JPY: Currency = String::from("JPY");
-    pub static ref  CNY: Currency = String::from("CNY");
-    pub static ref  CHF: Currency = String::from("CHF");
-    pub static ref  GBP: Currency = String::from("GBP");
-    pub static ref  HKD: Currency = String::from("HKD");
+    pub static ref RUB: Currency = String::from("RUB");
+    pub static ref USD: Currency = String::from("USD");
+    pub static ref EUR: Currency = String::from("EUR");
+    pub static ref TRY: Currency = String::from("TRY");
+    pub static ref JPY: Currency = String::from("JPY");
+    pub static ref CNY: Currency = String::from("CNY");
+    pub static ref CHF: Currency = String::from("CHF");
+    pub static ref GBP: Currency = String::from("GBP");
+    pub static ref HKD: Currency = String::from("HKD");
 }
 
 pub type OperationType = String;
 
 lazy_static! {
-    pub static ref  BUY: OperationType = String::from("Buy");
-    pub static ref  SELL: OperationType = String::from("Sell");
-    pub static ref  OperationTypeBrokerCommission: OperationType = String::from("BrokerCommission");
-    pub static ref  OperationTypeExchangeCommission: OperationType = String::from("ExchangeCommission");
-    pub static ref  OperationTypeServiceCommission: OperationType = String::from("ServiceCommission");
-    pub static ref  OperationTypeMarginCommission: OperationType = String::from("MarginCommission");
-    pub static ref  OperationTypeOtherCommission: OperationType = String::from("OtherCommission");
-    pub static ref  OperationTypePayIn: OperationType = String::from("PayIn");
-    pub static ref  OperationTypePayOut: OperationType = String::from("PayOut");
-    pub static ref  OperationTypeTax: OperationType = String::from("Tax");
-    pub static ref  OperationTypeTaxLucre: OperationType = String::from("TaxLucre");
-    pub static ref  OperationTypeTaxDividend: OperationType = String::from("TaxDividend");
-    pub static ref  OperationTypeTaxCoupon: OperationType = String::from("TaxCoupon");
-    pub static ref  OperationTypeTaxBack: OperationType = String::from("TaxBack");
-    pub static ref  OperationTypeRepayment: OperationType = String::from("Repayment");
-    pub static ref  OperationTypePartRepayment: OperationType = String::from("PartRepayment");
-    pub static ref  OperationTypeCoupon: OperationType = String::from("Coupon");
-    pub static ref  OperationTypeDividend: OperationType = String::from("Dividend");
-    pub static ref  OperationTypeSecurityIn: OperationType = String::from("SecurityIn");
-    pub static ref  OperationTypeSecurityOut: OperationType = String::from("SecurityOut");
-    pub static ref  OperationTypeBuyCard: OperationType = String::from("BuyCard");
+    pub static ref BUY: OperationType = String::from("Buy");
+    pub static ref SELL: OperationType = String::from("Sell");
+    pub static ref OperationTypeBrokerCommission: OperationType = String::from("BrokerCommission");
+    pub static ref OperationTypeExchangeCommission: OperationType =
+        String::from("ExchangeCommission");
+    pub static ref OperationTypeServiceCommission: OperationType =
+        String::from("ServiceCommission");
+    pub static ref OperationTypeMarginCommission: OperationType = String::from("MarginCommission");
+    pub static ref OperationTypeOtherCommission: OperationType = String::from("OtherCommission");
+    pub static ref OperationTypePayIn: OperationType = String::from("PayIn");
+    pub static ref OperationTypePayOut: OperationType = String::from("PayOut");
+    pub static ref OperationTypeTax: OperationType = String::from("Tax");
+    pub static ref OperationTypeTaxLucre: OperationType = String::from("TaxLucre");
+    pub static ref OperationTypeTaxDividend: OperationType = String::from("TaxDividend");
+    pub static ref OperationTypeTaxCoupon: OperationType = String::from("TaxCoupon");
+    pub static ref OperationTypeTaxBack: OperationType = String::from("TaxBack");
+    pub static ref OperationTypeRepayment: OperationType = String::from("Repayment");
+    pub static ref OperationTypePartRepayment: OperationType = String::from("PartRepayment");
+    pub static ref OperationTypeCoupon: OperationType = String::from("Coupon");
+    pub static ref OperationTypeDividend: OperationType = String::from("Dividend");
+    pub static ref OperationTypeSecurityIn: OperationType = String::from("SecurityIn");
+    pub static ref OperationTypeSecurityOut: OperationType = String::from("SecurityOut");
+    pub static ref OperationTypeBuyCard: OperationType = String::from("BuyCard");
 }
 
 pub type OrderStatus = String;
 
 lazy_static! {
-    pub static ref  OrderStatusNew: OrderStatus = String::from("New");
-    pub static ref  OrderStatusPartiallyFill: OrderStatus = String::from("PartiallyFill");
-    pub static ref  OrderStatusFill: OrderStatus = String::from("Fill");
-    pub static ref  OrderStatusCancelled: OrderStatus = String::from("Cancelled");
-    pub static ref  OrderStatusReplaced: OrderStatus = String::from("Replaced");
-    pub static ref  OrderStatusPendingCancel: OrderStatus = String::from("PendingCancel");
-    pub static ref  OrderStatusRejected: OrderStatus = String::from("Rejected");
-    pub static ref  OrderStatusPendingReplace: OrderStatus = String::from("PendingReplace");
-    pub static ref  OrderStatusPendingNew: OrderStatus = String::from("PendingNew");
+    pub static ref OrderStatusNew: OrderStatus = String::from("New");
+    pub static ref OrderStatusPartiallyFill: OrderStatus = String::from("PartiallyFill");
+    pub static ref OrderStatusFill: OrderStatus = String::from("Fill");
+    pub static ref OrderStatusCancelled: OrderStatus = String::from("Cancelled");
+    pub static ref OrderStatusReplaced: OrderStatus = String::from("Replaced");
+    pub static ref OrderStatusPendingCancel: OrderStatus = String::from("PendingCancel");
+    pub static ref OrderStatusRejected: OrderStatus = String::from("Rejected");
+    pub static ref OrderStatusPendingReplace: OrderStatus = String::from("PendingReplace");
+    pub static ref OrderStatusPendingNew: OrderStatus = String::from("PendingNew");
 }
 
 pub type OperationStatus = String;
 
 lazy_static! {
-    pub static ref  OperationStatusDone: OperationStatus = String::from("Done");
-    pub static ref  OperationStatusDecline: OperationStatus = String::from("Decline");
-    pub static ref  OperationStatusProgress: OperationStatus = String::from("Progress");
+    pub static ref OperationStatusDone: OperationStatus = String::from("Done");
+    pub static ref OperationStatusDecline: OperationStatus = String::from("Decline");
+    pub static ref OperationStatusProgress: OperationStatus = String::from("Progress");
 }
 
 pub type InstrumentType = String;
 
 lazy_static! {
-    pub static ref  InstrumentTypeStock: InstrumentType = String::from("Stock");
-    pub static ref  InstrumentTypeCurrency: InstrumentType = String::from("Currency");
-    pub static ref  InstrumentTypeBond: InstrumentType = String::from("Bond");
-    pub static ref  InstrumentTypeEtf: InstrumentType = String::from("Etf");
+    pub static ref InstrumentTypeStock: InstrumentType = String::from("Stock");
+    pub static ref InstrumentTypeCurrency: InstrumentType = String::from("currency");
+    pub static ref InstrumentTypeBond: InstrumentType = String::from("Bond");
+    pub static ref InstrumentTypeEtf: InstrumentType = String::from("Etf");
 }
 
 pub type OrderType = String;
 
 lazy_static! {
-    pub static ref  OrderTypeLimit: OrderType = String::from("Limit");
-    pub static ref  OrderTypeMarket: OrderType = String::from("Market");
+    pub static ref OrderTypeLimit: OrderType = String::from("Limit");
+    pub static ref OrderTypeMarket: OrderType = String::from("Market");
 }
 pub struct PlacedOrder {
     id: String,
@@ -135,14 +137,16 @@ pub struct MoneyAmount {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Instrument {
-    FIGI: String,
-    Ticker: String,
-    ISIN: String,
-    Name: String,
-    MinPriceIncrement: f64,
-    Lot: i64,
-    Currency: Currency,
-    Type: InstrumentType,
+    figi: String,
+    ticker: String,
+    isin: String,
+    name: String,
+    #[serde(rename = "minPriceIncrement")]
+    min_price_increment: f64,
+    lot: i64,
+    currency: Currency,
+    #[serde(rename = "type")]
+    r#type: InstrumentType,
 }
 
 pub struct Operation {
@@ -197,8 +201,8 @@ pub struct RestOrderBook {
 pub type AccountType = String;
 
 lazy_static! {
-    pub static ref  AccountTinkoff: AccountType = String::from("Tinkoff");
-    pub static ref  AccountTinkoffIIS: AccountType = String::from("TinkoffIis");
+    pub static ref AccountTinkoff: AccountType = String::from("Tinkoff");
+    pub static ref AccountTinkoffIIS: AccountType = String::from("TinkoffIis");
 }
 pub struct Account {
     Type: AccountType,
