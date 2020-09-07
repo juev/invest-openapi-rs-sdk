@@ -149,6 +149,11 @@ pub struct Instrument {
     r#type: InstrumentType,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Instruments {
+    instruments: Vec<Instrument>,
+}
+
 pub struct Operation {
     ID: String,
     Status: OperationStatus,
