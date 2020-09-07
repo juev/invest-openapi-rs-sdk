@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 
-use std::io::Read;
 use std::time::Duration;
 
 use lazy_static::lazy_static;
-use reqwest::header;
 use reqwest::Url;
+use reqwest::{header, Error};
 
 use self::types::Instrument;
+use anyhow::Result;
 use serde_json::json;
 use serde_json::Value;
 
@@ -37,19 +37,20 @@ impl RestClient {
         }
     }
 
-    pub fn instrument_by_figi(&self, figi: &str) -> Instrument {
+    pub fn instrument_by_figi(&self, figi: &str) -> Result<Instrument> {
         let path = format!("{}/market/search/by-figi?figi={}", &self.api_url, figi);
-        let v: Instrument = serde_json::from_value(json!(&self.do_request(path))).unwrap();
-        v
+        let value = &self.do_request(path)?;
+        let v: Instrument = serde_json::from_value(json!(value))?;
+        Ok(v)
     }
 
-    fn do_request(&self, path: String) -> Value {
+    fn do_request(&self, path: String) -> Result<Value> {
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(5))
             .build()
             .unwrap();
 
-        let mut res = client
+        let res = client
             .get(Url::parse(&path).unwrap())
             .bearer_auth(&self.token)
             .header(
@@ -58,11 +59,9 @@ impl RestClient {
             )
             .send()
             .unwrap();
-
-        let mut body = String::new();
-        res.read_to_string(&mut body).unwrap();
-        let root: Value = serde_json::from_str(&body[..]).unwrap();
-        let payload: Value = json!(root.get("payload"));
-        payload
+        let body = res.text()?;
+        let json: Value = serde_json::from_str(&*body)?;
+        let payload: Value = json!(json.get("payload"));
+        Ok(payload)
     }
 }
