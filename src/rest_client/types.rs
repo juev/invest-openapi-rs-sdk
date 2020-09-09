@@ -106,18 +106,26 @@ pub struct Order {
     price: f64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Portfolio {
-    positions: Vec<PositionBalance>,
-    // array or slice
-    currencies: Vec<CurrencyBalance>, // array or slice
+    pub positions: PositionBalances,
+    pub currencies: CurrencyBalances,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CurrencyBalance {
     currency: Currency,
     balance: f64,
+    #[serde(default)]
     blocked: f64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CurrencyBalances {
+    currencies: Vec<CurrencyBalance>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PositionBalance {
     figi: String,
     ticker: String,
@@ -130,6 +138,11 @@ pub struct PositionBalance {
     average_position_price: MoneyAmount,
     average_position_price_no_nkd: MoneyAmount,
     name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PositionBalances {
+    positions: Vec<PositionBalance>
 }
 
 #[derive(Debug, Serialize, Deserialize)]

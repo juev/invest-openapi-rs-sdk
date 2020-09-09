@@ -5,10 +5,8 @@ use std::time::Duration;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
-use reqwest::header;
-use reqwest::Url;
-use serde_json::json;
-use serde_json::Value;
+use reqwest::{header, Url};
+use serde_json::{json, Value};
 
 use self::types::*;
 
@@ -103,10 +101,44 @@ impl RestClient {
             url.query_pairs_mut()
                 .append_pair("brokerAccountId", account_id);
         }
-        println!("url: \n{:?}", url);
         let value = &self.do_request(url.to_string())?;
-        println!("value: \n{:?}", value);
         let v: Operations = serde_json::from_value(json!(value))?;
+        Ok(v)
+    }
+
+    pub fn portfolio(&self, account_id: &str) -> Result<Portfolio> {
+        let positions = (&self).positions_portfolio(account_id)?;
+        let currencies = (&self).currencies_portfolio(account_id)?;
+        let portfolio = Portfolio {
+            currencies,
+            positions,
+        };
+        Ok(portfolio)
+    }
+
+    pub fn positions_portfolio(&self, account_id: &str) -> Result<PositionBalances> {
+        let path = format!("{}/portfolio", &self.api_url);
+        let mut url = Url::parse(&*path)?;
+        if account_id != DEFAULT_ACCOUNT.as_str() {
+            url.query_pairs_mut()
+                .clear()
+                .append_pair("brokerAccountId", account_id);
+        }
+        let value = &self.do_request(url.to_string())?;
+        let v: PositionBalances = serde_json::from_value(json!(value))?;
+        Ok(v)
+    }
+
+    pub fn currencies_portfolio(&self, account_id: &str) -> Result<CurrencyBalances> {
+        let path = format!("{}/portfolio/currencies", &self.api_url);
+        let mut url = Url::parse(&*path)?;
+        if account_id != DEFAULT_ACCOUNT.as_str() {
+            url.query_pairs_mut()
+                .clear()
+                .append_pair("brokerAccountId", account_id);
+        }
+        let value = &self.do_request(url.to_string())?;
+        let v: CurrencyBalances = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
