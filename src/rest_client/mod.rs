@@ -1,82 +1,79 @@
 #![allow(dead_code)]
 
-use std::time::Duration;
-
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
-use lazy_static::lazy_static;
-use reqwest::{header, Url};
+use serde::{Serialize, Deserialize};
 use serde_json::{json, Value};
+use url::*;
+use crate::*;
 
-use self::types::*;
-
-mod types;
-
-lazy_static! {
-    static ref RESTAPIURL: String = String::from("https://api-invest.tinkoff.ru/openapi");
-}
 pub struct RestClient {
-    // httpClient *http.Client
     token: String,
-    api_url: String,
+    api_url: Url,
 }
 
 impl RestClient {
+
     pub fn new(token: String) -> Self {
         Self {
             token,
-            api_url: RESTAPIURL.to_string(),
+            api_url: Url::parse("https://api-invest.tinkoff.ru/openapi/").unwrap(),
         }
     }
 
     pub fn new_sandbox(token: String) -> Self {
         Self {
             token,
-            api_url: format!("{}/sandbox", RESTAPIURL.to_string()),
+            api_url: Url::parse("https://api-invest.tinkoff.ru/openapi/sandbox/").unwrap(),
         }
     }
 
     pub fn instrument_by_figi(&self, figi: &str) -> Result<Instrument> {
-        let path = format!("{}/market/search/by-figi?figi={}", &self.api_url, figi);
-        let value = &self.do_request(path)?;
+        let mut base = (&self).api_url.join("market/search/by-figi")?;
+        base.query_pairs_mut()
+            .clear()
+            .append_pair("figi", figi)
+            .finish();
+        let value = &self.get_request(&base)?;
         let v: Instrument = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
     pub fn instrument_by_ticker(&self, ticker: &str) -> Result<Instruments> {
-        let path = format!(
-            "{}/market/search/by-ticker?ticker={}",
-            &self.api_url, ticker
-        );
-        let value = &self.do_request(path)?;
+        let mut base = (&self).api_url.join("market/search/by-ticker")?;
+        base.query_pairs_mut()
+            .clear()
+            .append_pair("ticker", ticker)
+            .finish();
+        let value = &self.get_request(&base)?;
         let v: Instruments = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
     pub fn currencies(&self) -> Result<Instruments> {
-        let path = format!("{}/market/currencies", &self.api_url);
-        let value = &self.do_request(path)?;
+        let url = (&self).api_url.join("market/currencies")?;
+        let value = &self.get_request(&url)?;
         let v: Instruments = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
     pub fn etfs(&self) -> Result<Instruments> {
-        let path = format!("{}/market/etfs", &self.api_url);
-        let value = &self.do_request(path)?;
+        let url = (&self).api_url.join("market/etfs")?;
+        let value = &self.get_request(&url)?;
         let v: Instruments = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
     pub fn bonds(&self) -> Result<Instruments> {
-        let path = format!("{}/market/bonds", &self.api_url);
-        let value = &self.do_request(path)?;
+        let url = (&self).api_url.join("market/bonds")?;
+        let value = &self.get_request(&url)?;
         let v: Instruments = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
     pub fn stocks(&self) -> Result<Instruments> {
-        let path = format!("{}/market/stocks", &self.api_url);
-        let value = &self.do_request(path)?;
+        let url = (&self).api_url.join("market/stocks")?;
+        let value = &self.get_request(&url)?;
         let v: Instruments = serde_json::from_value(json!(value))?;
         Ok(v)
     }
@@ -88,8 +85,7 @@ impl RestClient {
         to: DateTime<Utc>,
         figi: &str,
     ) -> Result<Operations> {
-        let path = format!("{}/operations", &self.api_url);
-        let mut url = Url::parse(&*path)?;
+        let mut url = (&self).api_url.join("operations")?;
         url.query_pairs_mut()
             .clear()
             .append_pair("from", from.to_rfc3339().as_str())
@@ -101,7 +97,7 @@ impl RestClient {
             url.query_pairs_mut()
                 .append_pair("brokerAccountId", account_id);
         }
-        let value = &self.do_request(url.to_string())?;
+        let value = &self.get_request(&url)?;
         let v: Operations = serde_json::from_value(json!(value))?;
         Ok(v)
     }
@@ -117,49 +113,107 @@ impl RestClient {
     }
 
     pub fn positions_portfolio(&self, account_id: &str) -> Result<PositionBalances> {
-        let path = format!("{}/portfolio", &self.api_url);
-        let mut url = Url::parse(&*path)?;
+        let mut url = (&self).api_url.join("portfolio")?;
         if account_id != DEFAULT_ACCOUNT.as_str() {
             url.query_pairs_mut()
                 .clear()
                 .append_pair("brokerAccountId", account_id);
         }
-        let value = &self.do_request(url.to_string())?;
+        let value = &self.get_request(&url)?;
         let v: PositionBalances = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
     pub fn currencies_portfolio(&self, account_id: &str) -> Result<CurrencyBalances> {
-        let path = format!("{}/portfolio/currencies", &self.api_url);
-        let mut url = Url::parse(&*path)?;
+        let mut url = (&self).api_url.join("portfolio/currencies")?;
         if account_id != DEFAULT_ACCOUNT.as_str() {
             url.query_pairs_mut()
                 .clear()
                 .append_pair("brokerAccountId", account_id);
         }
-        let value = &self.do_request(url.to_string())?;
+        let value = &self.get_request(&url)?;
         let v: CurrencyBalances = serde_json::from_value(json!(value))?;
         Ok(v)
     }
 
-    fn do_request(&self, path: String) -> Result<Value> {
-        let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(5))
-            .build()
-            .unwrap();
+    pub fn order_cancel(&self, account_id: &str, id: &str) -> Result<()> {
+        let mut url = (&self).api_url.join("orders/cancel")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("orderId", id);
+        if account_id != DEFAULT_ACCOUNT.as_str() {
+            url.query_pairs_mut()
+                .clear()
+                .append_pair("brokerAccountId", account_id);
+        }
+        (&self).post_request(url, "".to_string())?;
+        Ok(())
+    }
 
-        let res = client
-            .get(Url::parse(&path).unwrap())
-            .bearer_auth(&self.token)
-            .header(
-                header::CONTENT_TYPE,
-                header::HeaderValue::from_static("application/json"),
-            )
-            .send()
-            .unwrap();
-        let body = res.text()?;
-        let json: Value = serde_json::from_str(&*body)?;
-        let payload: Value = json!(json.get("payload"));
-        Ok(payload)
+    pub fn limit_order(
+        &self,
+        account_id: &str,
+        figi: &str,
+        lots: i64,
+        operation: OperationType,
+        price: f64,
+    ) -> Result<PlacedOrder> {
+        let mut url = (&self).api_url.join("orders/limit-order")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("figi", figi);
+        if account_id != DEFAULT_ACCOUNT.as_str() {
+            url.query_pairs_mut()
+                .clear()
+                .append_pair("brokerAccountId", account_id);
+        }
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Body {
+            lots: i64,
+            operation: OperationType,
+            price: f64,
+        }
+        let body = Body {
+            lots,
+            operation,
+            price,
+        };
+        let body = serde_json::to_string(&body)?;
+        // println!("{:?}", url);
+        // println!("{:?}", body);
+        let response = (&self).post_request(url, body)?;
+        // println!("{:?}", response);
+        let result = serde_json::from_value(json!(response))?;
+        // println!("{:?}", result);
+        Ok(result)
+    }
+
+    fn get_request(&self, url: &Url) -> Result<Value> {
+        let response = attohttpc::get(&url.as_str())
+            .header_append("Content-Type", "application/json")
+            .header_append("Authorization", format!("Bearer {}", &self.token))
+            .send()?;
+        match response.error_for_status() {
+            Ok(response) => {
+                let json: Value = serde_json::from_str(&*response.text()?)?;
+                Ok(json!(json.get("payload")))
+            }
+            Err(e) => Err(anyhow!("{:?}", e))
+        }
+    }
+
+    fn post_request(&self, url: Url, body: String) -> Result<Value> {
+        let response = attohttpc::post(&url.as_str())
+            .header_append("Content-Type", "application/json")
+            .header_append("Authorization", format!("Bearer {}", &self.token))
+            .json(&body)?
+            .send()?;
+        match response.error_for_status() {
+            Ok(response) => {
+                let json: Value = serde_json::from_str(&*response.text()?)?;
+                Ok(json!(json.get("payload")))
+            }
+            Err(e) => Err(anyhow!("{:?}", e))
+        }
     }
 }
