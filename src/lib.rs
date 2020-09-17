@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -99,6 +100,7 @@ pub struct PlacedOrder {
     message: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Order {
     id: String,
     figi: String,
@@ -108,6 +110,11 @@ pub struct Order {
     executed_lots: i64,
     r#type: OrderType,
     price: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Orders {
+    orders: Vec<Order>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -249,6 +256,144 @@ pub struct Account {
     r#type: AccountType,
     id: String,
 }
+
+pub struct Accounts {
+    accounts: Vec<Account>
+}
+
 lazy_static! {
     pub static ref  DEFAULT_ACCOUNT: String = String::from(""); // Номер счета (по умолчанию - Тинькофф)
+}
+
+// streaming_domain.go
+
+pub static MAX_ORDERBOOK_DEPTH: i64 = 20;
+
+pub type CandleInterval = String;
+
+lazy_static! {
+pub static ref CandleInterval1Min:   CandleInterval = "1min";
+pub static ref CandleInterval2Min:   CandleInterval = "2min";
+pub static ref CandleInterval3Min:   CandleInterval = "3min";
+pub static ref CandleInterval5Min:   CandleInterval = "5min";
+pub static ref CandleInterval10Min:  CandleInterval = "10min";
+pub static ref CandleInterval15Min:  CandleInterval = "15min";
+pub static ref CandleInterval30Min:  CandleInterval = "30min";
+pub static ref CandleInterval1Hour:  CandleInterval = "hour";
+pub static ref CandleInterval2Hour:  CandleInterval = "2hour";
+pub static ref CandleInterval4Hour:  CandleInterval = "4hour";
+pub static ref CandleInterval1Day:   CandleInterval = "day";
+pub static ref CandleInterval1Week:  CandleInterval = "week";
+pub static ref CandleInterval1Month: CandleInterval = "month";
+}
+
+lazy_static! {
+pub static ref BreakInTrading:               TradingStatus = "break_in_trading";
+pub static ref NormalTrading:                TradingStatus = "normal_trading";
+pub static ref NotAvailableForTrading:       TradingStatus = "not_available_for_trading";
+pub static ref ClosingAuction:               TradingStatus = "closing_auction";
+pub static ref ClosingPeriod:                TradingStatus = "closing_period";
+pub static ref DarkPoolAuction:              TradingStatus = "dark_pool_auction";
+pub static ref DiscreteAuction:              TradingStatus = "discrete_auction";
+pub static ref OpeningPeriod:                TradingStatus = "opening_period";
+pub static ref OpeningAuctionPeriod:         TradingStatus = "opening_auction_period";
+pub static ref TradingAtClosingAuctionPrice: TradingStatus = "trading_at_closing_auction_price";
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Event {
+    #[serde(rename = "event")]
+    name: String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FullEvent {
+    #[serde(rename = "event")]
+    name: String,
+    time: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CandleEvent {
+    full_event: FullEvent,
+    #[serde(rename = "payload")]
+    candle: Candle,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Candle {
+    figi: String,
+    interval: CandleInterval,
+    #[serde(rename = "o")]
+    open_price: f64,
+    #[serde(rename = "c")]
+    close_price: f64,
+    #[serde(rename = "h")]
+    high_price: f64,
+    #[serde(rename = "l")]
+    low_price: f64,
+    #[serde(rename = "v")]
+    volume: f64,
+    #[serde(rename = "time")]
+    ts: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Candles {
+    candles: Vec<Candle>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OrderBookEvent {
+    full_event: FullEvent,
+    #[serde(rename = "payload")]
+    order_book: OrderBook,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OrderBook {
+    figi: String,
+    depth: i64,
+    bids: Vec<PriceQuantity>,
+    asks: Vec<PriceQuantity>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PriceQuantity {
+    price: f64,
+    quantity: f64
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InstrumentInfoEvent {
+    full_event: FullEvent,
+    #[serde(rename = "payload")]
+    info: InstrumentInfo,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InstrumentInfo {
+    figi: String,
+    trade_status: TradingStatus,
+    min_price_increment: f64,
+    lot: f64,
+    #[serde(skip_deserializing)]
+    accrued_interest: f64,
+    #[serde(skip_deserializing)]
+    limit_up: f64,
+    #[serde(skip_deserializing)]
+    limit_down: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ErrorEvent {
+    full_event: FullEvent,
+    #[serde(rename = "payload")]
+    error: Error,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Error {
+    request_id: String,
+    #[serde(skip_deserializing)]
+    error: String,
 }

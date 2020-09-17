@@ -2,9 +2,10 @@
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use url::*;
+
 use crate::*;
 
 pub struct RestClient {
@@ -13,7 +14,6 @@ pub struct RestClient {
 }
 
 impl RestClient {
-
     pub fn new(token: String) -> Self {
         Self {
             token,
@@ -179,13 +179,110 @@ impl RestClient {
             price,
         };
         let body = serde_json::to_string(&body)?;
-        // println!("{:?}", url);
-        // println!("{:?}", body);
         let response = (&self).post_request(url, body)?;
-        // println!("{:?}", response);
         let result = serde_json::from_value(json!(response))?;
-        // println!("{:?}", result);
         Ok(result)
+    }
+
+    pub fn market_order(&self, account_id: &str, figi: &str, lots: i64, operation: OperationType) -> Result<PlacedOrder> {
+        let mut url = (&self).api_url.join("orders/market-order")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("figi", figi);
+        if account_id != DEFAULT_ACCOUNT.as_str() {
+            url.query_pairs_mut()
+                .clear()
+                .append_pair("brokerAccountId", account_id);
+        }
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Body {
+            lots: i64,
+            operation: OperationType,
+        }
+        let body = Body {
+            lots,
+            operation,
+        };
+        let body = serde_json::to_string(&body)?;
+        let response = (&self).post_request(url, body)?;
+        let v = serde_json::from_value(json!(response))?;
+        Ok(v)
+    }
+
+    pub fn orders(&self, account_id: &str) -> Result<Orders> {
+        let mut url = (&self).api_url.join("orders")?;
+        if account_id != DEFAULT_ACCOUNT.as_str() {
+            url.query_pairs_mut()
+                .clear()
+                .append_pair("brokerAccountId", account_id);
+        }
+        let value = &self.get_request(&url)?;
+        println!("value: {:#?}", value);
+        let v: Orders = match serde_json::from_value(json!(value)) {
+            Ok(value) => value,
+            Err(_) => Orders { orders: vec![] }
+        };
+        Ok(v)
+    }
+
+    pub fn candles(&self,
+                   from: DateTime<Utc>,
+                   to: DateTime<Utc>,
+                   interval: &str,
+                   figi: &str) -> Result<Vec<Candle>> {
+        let mut url = (&self).api_url.join("market/candles")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("interval", interval)
+            .append_pair("from", from.to_rfc3339().as_str())
+            .append_pair("to", to.to_rfc3339().as_str());
+        if figi != "" {
+            url.query_pairs_mut().append_pair("figi", figi);
+        }
+        let value = &self.get_request(&url)?;
+        struct Payload {
+            figi:     String,
+            interval: CandleInterval,
+            candles:  Vec<Candle>
+        };
+        let v: Payload = serde_json::from_value(json!(value))?;
+        Ok(v.candles)
+    }
+
+    fn orderbook(&self, depth: i64, figi: &str) -> Result<RestOrderBook> {
+        if depth < 1 || depth > MaxOrderbookDepth {
+            return Ok(RestOrderBook{
+                figi: "".to_string(),
+                depth,
+                bids: vec![],
+                asks: vec![],
+                trade_status: "".to_string(),
+                min_price_increment: 0.0,
+                last_price: 0.0,
+                close_price: 0.0,
+                limit_up: 0.0,
+                limit_down: 0.0,
+                face_value: 0.0
+            })
+        }
+        let mut url = (&self).api_url.join("market/orderbook")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("depth", &*depth.to_string());
+        if figi != "" {
+            url.query_pairs_mut().append_pair("figi", figi);
+        }
+        let value = &self.get_request(&url)?;
+        let v: RestOrderBook = serde_json::from_value(json!(value))?;
+        Ok(v)
+    }
+
+    fn accounts(&self) ->Result<Accounts> {
+        let mut url = (&self).api_url.join("user/accounts")?;
+        let value = &self.get_request(&url)?;
+        let v: Accounts = serde_json::from_value(json!(value))?;
+        Ok(v)
+
     }
 
     fn get_request(&self, url: &Url) -> Result<Value> {
