@@ -217,7 +217,6 @@ impl RestClient {
                 .append_pair("brokerAccountId", account_id);
         }
         let value = &self.get_request(&url)?;
-        println!("value: {:#?}", value);
         let v: Orders = match serde_json::from_value(json!(value)) {
             Ok(value) => value,
             Err(_) => Orders { orders: vec![] }
@@ -249,7 +248,7 @@ impl RestClient {
         Ok(v.candles)
     }
 
-    fn orderbook(&self, depth: i64, figi: &str) -> Result<RestOrderBook> {
+    pub fn orderbook(&self, depth: i64, figi: &str) -> Result<RestOrderBook> {
         if depth < 1 || depth > MaxOrderbookDepth {
             return Ok(RestOrderBook{
                 figi: "".to_string(),
@@ -277,12 +276,81 @@ impl RestClient {
         Ok(v)
     }
 
-    fn accounts(&self) ->Result<Accounts> {
+    pub fn accounts(&self) -> Result<Accounts> {
         let mut url = (&self).api_url.join("user/accounts")?;
         let value = &self.get_request(&url)?;
         let v: Accounts = serde_json::from_value(json!(value))?;
         Ok(v)
 
+    }
+
+    pub fn sandbox_register(&self) -> Result<Account> {
+        let mut url = (&self).api_url.join("sandbox/register")?;
+        let value = &self.post_request(url, "".to_string())?;
+        let v: Account = serde_json::from_value(json!(value))?;
+        Ok(v)
+    }
+
+    pub fn sandbox_clear(&self, account_id: &str) -> Result<()> {
+        let mut url = (&self).api_url.join("sandbox/clear")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("brokerAccountId", account_id);
+        let _value = &self.post_request(url, "".to_string())?;
+        Ok(())
+    }
+
+    pub fn sandbox_remove(&self, account_id: &str) -> Result<()> {
+        let mut url = (&self).api_url.join("sandbox/remove")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("brokerAccountId", account_id);
+        let _value = &self.post_request(url, "".to_string())?;
+        Ok(())
+    }
+
+    pub fn sandbox_set_currency_balance(&self, account_id: &str, currency: Currency, balance: f64) -> Result<()> {
+        let mut url = (&self).api_url.join("sandbox/currencies/balance")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("broker_account_id", account_id);
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Body {
+            currency: Currency,
+            balance: f64,
+            #[serde(rename = "brokerAccountId")]
+            broker_account_id: String,
+        }
+        let body = Body {
+            currency,
+            balance,
+            broker_account_id: account_id.to_string()
+        };
+        let body = serde_json::to_string(&body)?;
+        let _value = &self.post_request(url, body)?;
+        Ok(())
+    }
+
+    pub fn sandbox_set_position_balance(&self, account_id: &str, figi: &str, balance: f64) -> Result<()> {
+        let mut url = (&self).api_url.join("sandbox/positions/balance")?;
+        url.query_pairs_mut()
+            .clear()
+            .append_pair("broker_account_id", account_id);
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Body {
+            figi: String,
+            balance: f64,
+            #[serde(rename = "brokerAccountId")]
+            broker_account_id: String,
+        }
+        let body = Body {
+            figi: figi.to_string(),
+            balance,
+            broker_account_id: account_id.to_string()
+        };
+        let body = serde_json::to_string(&body)?;
+        let _value = &self.post_request(url, body)?;
+        Ok(())
     }
 
     fn get_request(&self, url: &Url) -> Result<Value> {
